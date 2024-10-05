@@ -16,6 +16,7 @@
 //staandardowy setup OpenGL
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 unsigned int loadTexture(const char *path);
@@ -29,7 +30,7 @@ const unsigned int SCR_HEIGHT = 1080;
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float lastX = (float)SCR_WIDTH / 2.0;
 float lastY = (float)SCR_HEIGHT / 2.0;
-bool firstMouse = true;
+bool firstMouse = true, leftMouseButton = false;
 
 //czas symulacji moze bedzie potrzebny jak nie to wywalic
 float deltaTime = 0.0f;
@@ -55,6 +56,7 @@ int main()
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -294,10 +296,21 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
+//guziki myszy
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+    //if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) 
+}
+
 // glfw: ruch myszy
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
-    /*
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) != GLFW_PRESS) {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        firstMouse = true;
+        return;
+    }
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
     float xpos = static_cast<float>(xposIn);
     float ypos = static_cast<float>(yposIn);
     if (firstMouse)
@@ -314,7 +327,6 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastY = ypos;
 
     camera.ProcessMouseMovement(xoffset, yoffset);
-    */
 }
 
 // glfw: zoom myszki do teleskopu
