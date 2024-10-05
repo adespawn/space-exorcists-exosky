@@ -10,7 +10,7 @@ z = parseInt(process.argv[4])
 
 base_dir = `/media/adespawn/01524459-1aff-4407-a4a6-68c6a130a898/data/layer_0`
 
-tmp_file = `/tmp/${process.pid}`
+tmp_file = `/tmp/${process.pid}.par`
 ans_file = `/tmp/${process.pid}.ans`
 
 function add_file(file) {
@@ -79,5 +79,5 @@ exec(`touch ${tmp_file}`, function (e, out, stderr) {
     }
     console.log(`Created tmp file: ${tmp_file}`)
     recursive_search(base_dir)
-    execSync(`bash ./api.sh ${tmp_file} ${ans_file}`)
+    execSync(`bash ./api.sh ${tmp_file} ${ans_file} ${x} ${y} ${z}`)
 })
