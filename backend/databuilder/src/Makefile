@@ -7,7 +7,7 @@ all: phase1 phase2
 phase1: phase1.o distances.o light.o file_operations.o data_structs.h
 	$(CPPC) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
-phase2: phase2.o distances.o light.o file_operations.o data_structs.h
+phase2: phase2.o distances.o light.o data_structs.h
 	$(CPPC) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 phase1.o: phase1.cpp data_structs.h
