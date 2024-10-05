@@ -51,7 +51,7 @@ struct Point {
 
 struct dane
 {
-    long sun_id;
+    long long sun_id;
     double x;
     double y;
     double z;
