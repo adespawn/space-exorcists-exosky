@@ -43,6 +43,7 @@ struct RGB {
 struct Point {
     int x;
     int y;
+    int brightness;  // Dodane pole jasności
 
     bool operator==(const Point& other) const {
         return x == other.x && y == other.y;
@@ -70,30 +71,6 @@ double map(double x, double in_min, double in_max, double out_min, double out_ma
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-bool isWhite(int x, int y, const std::unordered_set<Point>& starSet) {
-    return starSet.find(Point{ x, y }) != starSet.end();
-}
-dane minVals(const std::vector<dane>& dataset) {
-    dane min = dataset[0];
-    for (const auto& d : dataset) {
-        if (d.x < min.x) min.x = d.x;
-        if (d.y < min.y) min.y = d.y;
-        if (d.z < min.z) min.z = d.z;
-        if (d.intensity < min.intensity) min.intensity = d.intensity;
-    }
-    return min;
-}
-dane maxVals(const std::vector<dane>& dataset) {
-    dane max = dataset[0];  // Инициализация начальным значением
-    for (const auto& d : dataset) {
-        if (d.x > max.x) max.x = d.x;
-        if (d.y > max.y) max.y = d.y;
-        if (d.z > max.z) max.z = d.z;
-        if (d.intensity > max.intensity) max.intensity = d.intensity;
-    }
-    return max;
-}
-
 std::vector<dane> parseData() {
     std::ifstream file("data.txt");
     std::string line;
@@ -118,51 +95,63 @@ std::vector<dane> parseData() {
     return dataset;
 }
 
-void projectOntoPlanes(const std::vector<dane>& dataset, std::vector<dane>& xy_positive, std::vector<dane>& xy_negative,
-    std::vector<dane>& xz_positive, std::vector<dane>& xz_negative,
-    std::vector<dane>& yz_positive, std::vector<dane>& yz_negative) {
+dane minVals(const std::vector<dane>& dataset) {
+    dane min = dataset[0];
+    for (const auto& d : dataset) {
+        if (d.x < min.x) min.x = d.x;
+        if (d.y < min.y) min.y = d.y;
+        if (d.z < min.z) min.z = d.z;
+        if (d.intensity < min.intensity) min.intensity = d.intensity;
+    }
+    return min;
+}
 
-    for (const auto& data : dataset) {
-        double abs_x = std::abs(data.x);
-        double abs_y = std::abs(data.y);
-        double abs_z = std::abs(data.z);
+dane maxVals(const std::vector<dane>& dataset) {
+    dane max = dataset[0];
+    for (const auto& d : dataset) {
+        if (d.x > max.x) max.x = d.x;
+        if (d.y > max.y) max.y = d.y;
+        if (d.z > max.z) max.z = d.z;
+        if (d.intensity > max.intensity) max.intensity = d.intensity;
+    }
+    return max;
+}
 
-        if (abs_x > abs_y && abs_x > abs_z) {
-            if (data.x >= 0) {
-                yz_positive.push_back(data); // x >= 0
-            }
-            else {
-                yz_negative.push_back(data); // x < 0
-            }
-        }
-        else if (abs_y > abs_x && abs_y > abs_z) {
-            if (data.y >= 0) {
-                xz_positive.push_back(data); // y >= 0
-            }
-            else {
-                xz_negative.push_back(data); // y < 0
-            }
-        }
-        else {
-            if (data.z >= 0) {
-                xy_positive.push_back(data); // z >= 0
-            }
-            else {
-                xy_negative.push_back(data); // z < 0
+// Zastosuj to samo podejście co w pierwszym kodzie
+void generateStars(int width, std::unordered_set<Point>& starSet, const std::vector<dane>& dataset, const dane& max, const dane& min) {
+    for (const auto& d : dataset) {
+        Point star;
+        star.x = static_cast<int>(map(d.x, min.x, max.x, 0, width));
+        star.y = static_cast<int>(map(d.y, min.y, max.y, 0, width));
+        int brightness = static_cast<int>(map(d.intensity, min.intensity, max.intensity, 0, 255));
+        star.brightness = brightness;
+        starSet.insert(star);
+
+        int radius = static_cast<int>(map(d.intensity, min.intensity, max.intensity, 0, 5));
+
+        // Dodawanie sąsiadów z jasnością
+        for (int dx = -radius; dx <= radius; ++dx) {
+            for (int dy = -radius; dy <= radius; ++dy) {
+                if (dx * dx + dy * dy <= radius * radius) {
+                    Point neighbor = { star.x + dx, star.y + dy, brightness };
+                    if (neighbor.x >= 0 && neighbor.x < width && neighbor.y >= 0 && neighbor.y < width) {
+                        starSet.insert(neighbor);
+                    }
+                }
             }
         }
     }
 }
 
 void generateBitmapSegment(std::vector<std::vector<RGB>>& image, int width, int startY, int endY, const std::unordered_set<Point>& starSet) {
-    RGB whitePixel = { 255, 255, 255 };
     RGB blackPixel = { 0, 0, 0 };
 
     for (int y = startY; y < endY; ++y) {
         for (int x = 0; x < width; ++x) {
-            Point point = { x, y };
-            if (starSet.find(point) != starSet.end()) {
-                image[y][x] = whitePixel;
+            auto it = starSet.find(Point{ x, y });
+            if (it != starSet.end()) {
+                uint8_t brightness = it->brightness;
+                image[y][x] = { brightness, brightness, brightness };
             }
             else {
                 image[y][x] = blackPixel;
@@ -178,25 +167,30 @@ void generateBitmap(const char* fileName, int width, const std::unordered_set<Po
     infoHeader.width = width;
     infoHeader.height = width;
 
-    int rowStride = (width * 3 + 3) & ~3;
+    int rowStride = (width * 3 + 3) & ~3;  // Padding do wielokrotności 4 bajtów
     fileHeader.fileSize = sizeof(BMPFileHeader) + sizeof(BMPInfoHeader) + rowStride * width;
 
+    // Tworzenie bufora obrazu
     std::vector<std::vector<RGB>> image(width, std::vector<RGB>(width));
 
+    // Ilość wątków na podstawie liczby dostępnych rdzeni
     int numThreads = std::thread::hardware_concurrency();
     int rowsPerThread = width / numThreads;
     std::vector<std::thread> threads;
 
+    // Podziel zadanie na wątki
     for (int i = 0; i < numThreads; ++i) {
         int startY = i * rowsPerThread;
         int endY = (i == numThreads - 1) ? width : startY + rowsPerThread;
         threads.emplace_back(generateBitmapSegment, std::ref(image), width, startY, endY, std::ref(starSet));
     }
 
+    // Oczekiwanie na zakończenie wątków
     for (auto& t : threads) {
         t.join();
     }
 
+    // Zapis obrazu do pliku
     std::ofstream file(fileName, std::ios::binary);
     if (file) {
         file.write(reinterpret_cast<const char*>(&fileHeader), sizeof(fileHeader));
@@ -206,6 +200,7 @@ void generateBitmap(const char* fileName, int width, const std::unordered_set<Po
             for (int x = 0; x < width; ++x) {
                 file.write(reinterpret_cast<const char*>(&image[y][x]), sizeof(RGB));
             }
+            // Dodaj padding do wielokrotności 4 bajtów
             uint8_t padding[3] = { 0, 0, 0 };
             file.write(reinterpret_cast<const char*>(padding), rowStride - width * 3);
         }
@@ -215,27 +210,6 @@ void generateBitmap(const char* fileName, int width, const std::unordered_set<Po
     }
     else {
         std::cerr << "Cannot create file!" << std::endl;
-    }
-}
-
-void generateStars(int width, std::unordered_set<Point>& starSet, const std::vector<dane>& dataset, const dane& max, const dane& min) {
-    for (const auto& d : dataset) {
-        Point star;
-        star.x = static_cast<int>(map(d.x, min.x, max.x, 0, width));
-        star.y = static_cast<int>(map(d.y, min.y, max.y, 0, width));
-        starSet.insert(star);
-
-        int radius = static_cast<int>(map(d.intensity, min.intensity, max.intensity, 1, 3));
-
-        for (int dx = -radius; dx <= radius; ++dx) {
-            for (int dy = -radius; dy <= radius; ++dy) {
-                if (dx == 0 && dy == 0) continue;
-                Point neighbor = { star.x + dx, star.y + dy };
-                if (neighbor.x >= 0 && neighbor.x < width && neighbor.y >= 0 && neighbor.y < width) {
-                    starSet.insert(neighbor);
-                }
-            }
-        }
     }
 }
 
@@ -275,6 +249,46 @@ void generateCubeSides(int width, const std::vector<dane>& xy_positive, const st
     starSet.clear();
     generateStars(width, starSet, yz_negative, max, min);
     generateBitmap("front.bmp", width, starSet);
+}
+
+void projectOntoPlanes(const std::vector<dane>& dataset,
+    std::vector<dane>& xy_positive, std::vector<dane>& xy_negative,
+    std::vector<dane>& xz_positive, std::vector<dane>& xz_negative,
+    std::vector<dane>& yz_positive, std::vector<dane>& yz_negative) {
+    for (const auto& data : dataset) {
+        double abs_x = std::abs(data.x);
+        double abs_y = std::abs(data.y);
+        double abs_z = std::abs(data.z);
+
+        // Sprawdzanie, która z współrzędnych (x, y, z) jest dominująca
+        if (abs_x >= abs_y && abs_x >= abs_z) {
+            // Dominująca współrzędna X - projekcja na płaszczyznę YZ
+            if (data.x >= 0) {
+                yz_positive.push_back(data); // X >= 0
+            }
+            else {
+                yz_negative.push_back(data); // X < 0
+            }
+        }
+        else if (abs_y >= abs_x && abs_y >= abs_z) {
+            // Dominująca współrzędna Y - projekcja na płaszczyznę XZ
+            if (data.y >= 0) {
+                xz_positive.push_back(data); // Y >= 0
+            }
+            else {
+                xz_negative.push_back(data); // Y < 0
+            }
+        }
+        else {
+            // Dominująca współrzędna Z - projekcja na płaszczyznę XY
+            if (data.z >= 0) {
+                xy_positive.push_back(data); // Z >= 0
+            }
+            else {
+                xy_negative.push_back(data); // Z < 0
+            }
+        }
+    }
 }
 
 int main() {
