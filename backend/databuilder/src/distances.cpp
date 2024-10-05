@@ -5,7 +5,8 @@
 
 using namespace std;
 
-xyz_coordinates transform(const initial_raw_data &data) {
+xyz_coordinates transform(const initial_raw_data &data)
+{
     long double ra = (long double)data.ra * (long double)M_PI / (long double)180;
     long double dec = (long double)data.dec * (long double)M_PI / (long double)180;
     long double distance = (long double)data.distance;
