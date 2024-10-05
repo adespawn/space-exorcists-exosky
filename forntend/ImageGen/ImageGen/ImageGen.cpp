@@ -3,8 +3,11 @@
 #include <cstdint>
 #include <vector>
 #include <chrono>
+#include <thread>
+#include <mutex>
+#include <unordered_set>
 
-#pragma pack(push, 1) 
+#pragma pack(push, 1)
 struct BMPFileHeader {
     uint16_t fileType{ 0x4D42 };
     uint32_t fileSize{ 0 };
@@ -38,11 +41,43 @@ struct RGB {
 struct Point {
     int x;
     int y;
+
+    bool operator==(const Point& other) const {
+        return x == other.x && y == other.y;
+    }
 };
 
-bool isWhite(int x, int y, std::vector<Point> stars);
+namespace std {
+    template <>
+    struct hash<Point> {
+        std::size_t operator()(const Point& p) const noexcept {
+            return std::hash<int>()(p.x) ^ std::hash<int>()(p.y);
+        }
+    };
+}
 
-void generateBitmap(const char* fileName, int width, std::vector<Point> stars) {
+bool isWhite(int x, int y, const std::unordered_set<Point>& starSet) {
+    return starSet.find(Point{ x, y }) != starSet.end();
+}
+
+// Funkcja do generowania fragmentu bitmapy w pamięci
+void generateBitmapSegment(std::vector<std::vector<RGB>>& image, int width, int startY, int endY, const std::unordered_set<Point>& starSet) {
+    RGB whitePixel = { 255, 255, 255 };
+    RGB blackPixel = { 0, 0, 0 };
+
+    for (int y = startY; y < endY; ++y) {
+        for (int x = 0; x < width; ++x) {
+            if (isWhite(x, y, starSet)) {
+                image[y][x] = whitePixel;
+            }
+            else {
+                image[y][x] = blackPixel;
+            }
+        }
+    }
+}
+
+void generateBitmap(const char* fileName, int width, const std::unordered_set<Point>& starSet) {
     BMPFileHeader fileHeader;
     BMPInfoHeader infoHeader;
 
@@ -50,28 +85,39 @@ void generateBitmap(const char* fileName, int width, std::vector<Point> stars) {
     infoHeader.height = width;
 
     // Obliczamy rozmiar danych pikseli (z wyrównaniem do 4 bajtów na każdą linię)
-    int rowStride = (width * 3 + 3) & ~3;  // Każda linia musi mieć rozmiar będący wielokrotnością 4 bajtów
+    int rowStride = (width * 3 + 3) & ~3;
     fileHeader.fileSize = sizeof(BMPFileHeader) + sizeof(BMPInfoHeader) + rowStride * width;
+
+    // Przygotowanie bitmapy w pamięci (2D tablica RGB)
+    std::vector<std::vector<RGB>> image(width, std::vector<RGB>(width));
+
+    int numThreads = std::thread::hardware_concurrency();
+    int rowsPerThread = width / numThreads;
+
+    std::vector<std::thread> threads;
+    for (int i = 0; i < numThreads; ++i) {
+        int startY = i * rowsPerThread;
+        int endY = (i == numThreads - 1) ? width : startY + rowsPerThread;
+        threads.emplace_back(generateBitmapSegment, std::ref(image), width, startY, endY, std::ref(starSet));
+    }
+
+    for (auto& t : threads) {
+        t.join();
+    }
 
     std::ofstream file(fileName, std::ios::binary);
     if (file) {
-        // Zapisujemy nagłówki
+        // Zapis nagłówków BMP
         file.write(reinterpret_cast<const char*>(&fileHeader), sizeof(fileHeader));
         file.write(reinterpret_cast<const char*>(&infoHeader), sizeof(infoHeader));
 
-        RGB whitePixel = { 0, 0, 0 };
-        RGB blackPixel = { 255, 255, 255 };
-
+        // Zapis danych pikseli
         for (int y = 0; y < width; ++y) {
             for (int x = 0; x < width; ++x) {
-                if (isWhite(x, y, stars)) {
-                    file.write(reinterpret_cast<const char*>(&whitePixel), sizeof(whitePixel));
-                }
-                else {
-                    file.write(reinterpret_cast<const char*>(&blackPixel), sizeof(blackPixel));
-                }
+                file.write(reinterpret_cast<const char*>(&image[y][x]), sizeof(RGB));
             }
-            // Dodajemy padding, jeśli jest potrzebny
+
+            // Padding
             uint8_t padding[3] = { 0, 0, 0 };
             file.write(reinterpret_cast<const char*>(padding), rowStride - width * 3);
         }
@@ -84,33 +130,23 @@ void generateBitmap(const char* fileName, int width, std::vector<Point> stars) {
     }
 }
 
-bool isWhite(int x, int y, std::vector<Point> stars) {
-    for (const auto& star : stars) {
-        if (x == star.x && y == star.y) {
-            return true;
-        }
-    }
-    return false;
-}
-
-void generateStars(int width, std::vector<Point>& stars, const int noStars) {
+void generateStars(int width, std::unordered_set<Point>& starSet, const int noStars) {
     srand(static_cast<unsigned int>(time(0)));
     for (int i = 0; i < noStars; ++i) {
         Point star;
-        star.x = rand() % width;  // Gwiazda w losowym miejscu z marginesem
+        star.x = rand() % width;
         star.y = rand() % width;
-        stars.push_back(star);
+        starSet.insert(star);
 
-        // Dodajemy 9 sąsiednich pikseli wokół gwiazdy
+        // Dodawanie sąsiadów
         for (int dx = -1; dx <= 1; ++dx) {
             for (int dy = -1; dy <= 1; ++dy) {
-                if (dx == 0 && dy == 0) continue;  // Pomijamy środek (gwiazda już dodana)
+                if (dx == 0 && dy == 0) continue;
                 Point neighbor;
                 neighbor.x = star.x + dx;
                 neighbor.y = star.y + dy;
-                // Sprawdzamy, czy sąsiad mieści się w obszarze
                 if (neighbor.x >= 0 && neighbor.x < width && neighbor.y >= 0 && neighbor.y < width) {
-                    stars.push_back(neighbor);
+                    starSet.insert(neighbor);
                 }
             }
         }
@@ -119,15 +155,23 @@ void generateStars(int width, std::vector<Point>& stars, const int noStars) {
 
 int main() {
     const int width = 2048;
-    const int noStars = 10000;
+    const int noStars = 50000;
+
     auto start = std::chrono::high_resolution_clock::now();
-    std::vector<Point> stars;
-    generateStars(width, stars, noStars);
-    generateBitmap("output.bmp", width, stars);
+
+    std::unordered_set<Point> starSet;
+    generateStars(width, starSet, noStars);
+
+    generateBitmap("output.bmp", width, starSet);
+
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;
+
     std::cout << "Czas działania: " << duration.count() << " sekund" << std::endl;
+
+#ifdef _WIN32
     system("output.bmp");
+#endif
 
     return 0;
 }
