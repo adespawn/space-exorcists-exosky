@@ -8,9 +8,9 @@ struct initial_raw_data
     long sun_id;
 
     // Data for distance
-    double ra;
-    double dec;
-    float distance;
+    double ra; //deegrees
+    double dec; //degrees
+    float distance; //parsecs
 
     // Data for brightness
     float mag_g;
