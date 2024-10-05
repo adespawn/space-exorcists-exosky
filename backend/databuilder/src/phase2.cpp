@@ -110,6 +110,6 @@ int main(int argc, char* argv[])
         int x_id = coords_to_id(data.coords.x, x_low, x_high);
         int y_id = coords_to_id(data.coords.y, y_low, y_high);
         int z_id = coords_to_id(data.coords.z, z_low, z_high);
-        write_to_file(dest_path, data, to_string(layer + 1) + "_" + to_string(x_id) + "_" + to_string(y_id) + "_" + to_string(z_id));
+        write_to_file(dest_path, data, to_string(layer) + "_" + to_string(x_id) + "_" + to_string(y_id) + "_" + to_string(z_id));
     }
 }
