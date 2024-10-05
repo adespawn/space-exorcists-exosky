@@ -98,17 +98,18 @@ int main(int argc, char* argv[])
     info >> x_low >> x_high >> y_low >> y_high >> z_low >> z_high;
     info.close();
     full_path = path + file_name + ".raw";
-    int fd = open64(path.c_str(), O_RDONLY, 0666);
+    string dest_path = path + file_name + "/";
+    int fd = open64(full_path.c_str(), O_RDONLY, 0666);
     if (fd <= 0) critical("There was an error while opening a file: " + to_string(fd));
     internal_data data;
     int layer = file_name[0] - '0' + 1;
     while (true) {
         int cnt = read(fd, &data, sizeof(internal_data));
-        if (cnt != sizeof(internal_data)) critical("Didn't read the whole data!");
-        if (cnt <= 0) break;
+        if(cnt == 0) break;
+        if (cnt != sizeof(internal_data)) critical("Didn't read the whole data! ["+to_string(cnt)+" instead of "+to_string(sizeof(internal_data))+", errno: "+to_string(errno)+"]");
         int x_id = coords_to_id(data.coords.x, x_low, x_high);
         int y_id = coords_to_id(data.coords.y, y_low, y_high);
         int z_id = coords_to_id(data.coords.z, z_low, z_high);
-        write_to_file(path, data, to_string(layer + 1) + "_" + to_string(x_id) + "_" + to_string(y_id) + "_" + to_string(z_id));
+        write_to_file(dest_path, data, to_string(layer) + "_" + to_string(x_id) + "_" + to_string(y_id) + "_" + to_string(z_id));
     }
 }

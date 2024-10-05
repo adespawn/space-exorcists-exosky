@@ -20,13 +20,13 @@ process.on('exit', exitHandler.bind(null,{cleanup:true}));
 
 function work_file(c_path, c_file){
     console.log(`Starting working for file ${c_path}${c_file}!`)
-    base_filename = c_file.split('.raw')[0]
-    new_dir = c_path + base_filename + '/'
+    let base_filename = c_file.split('.raw')[0]
+    let new_dir = c_path + base_filename + '/'
     new_paths += new_dir + '\n'
     if (!fs.existsSync(new_dir))
         fs.mkdirSync(new_dir)
 
-    exec(`./phase_2 ${c_path} ${base_filename} &>>../.log/phase_2_cpp`, function (e, out, stderr) {
+    exec(`bash ./exe.sh ${c_path} ${base_filename} &>>../.log/phase_2_cpp`, function (e, out, stderr) {
         if (e) {
             console.log(e)
         }
