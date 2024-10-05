@@ -32,10 +32,11 @@ function work_folder(c_path) {
     });
 }
 
-for (let i = 2; i < process.argc; i++) {
+for (let i = 2; i < process.argv.length; i++) {
     folders = fs.readFileSync(process.argv[i], { encoding: 'utf8', flag: 'r' })
     folders = folders.split('\n')
-    folders.forEach(element => {
-        work_folder(element)
-    });
+    console.log(folders)
+    for(let i = 0; i<folders.length; i++){
+        work_folder(folders[i])
+    }
 }
