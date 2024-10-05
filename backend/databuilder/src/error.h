@@ -12,4 +12,8 @@ void critical(std::string err)
     exit(1);
 }
 
+void warning(std::string err)
+{
+    std::cerr << "WARNING: " << err << "\n";
+}
 #endif
