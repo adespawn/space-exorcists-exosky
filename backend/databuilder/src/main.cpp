@@ -12,7 +12,7 @@ vector<internal_data> transform(const vector<initial_raw_data> &data)
     {
         internal_data new_el;
         new_el.sun_id = element.sun_id;
-        new_el.coors = transform(element);
+        new_el.coords = transform(element);
         new_el.light = parse(element);
         res.push_back(new_el);
     }
@@ -23,6 +23,11 @@ int main()
 {
     auto raw_data = read_raw();
     auto internal_data = transform(raw_data);
+
+    for(auto i:internal_data){
+        zero_layer_parse_data(i);
+    }
     raw_data[0].log();
-    cout << sizeof(internal_data) << " " << sizeof(long) << " " << sizeof(light_level) << " " << sizeof(light_level) << "\n";
+    internal_data[0].log();
+    // cout << sizeof(internal_data) << " " << sizeof(long) << " " << sizeof(light_level) << " " << sizeof(light_level) << "\n";
 }

@@ -25,11 +25,14 @@ vector<initial_raw_data> read_raw()
 
 void zero_layer_parse_data(const internal_data &data)
 {
-    int x_id = (data.coors.x + (long double)100000) / (long double)40000;
-    int y_id = (data.coors.y + (long double)100000) / (long double)40000;
-    int z_id = (data.coors.z + (long double)100000) / (long double)40000;
+    int x_id = (data.coords.x + (long double)100000) / (long double)40000;
+    int y_id = (data.coords.y + (long double)100000) / (long double)40000;
+    int z_id = (data.coords.z + (long double)100000) / (long double)40000;
     if (x_id < 0 || x_id > 4 || y_id < 0 || y_id > 4 || z_id < 0 || z_id > 4)
     {
+        cout<<"X | Y | X \n";
+        cout << data.coords.x << " " << data.coords.y << " " << data.coords.z << "\n";
+        cout << x_id << " " << y_id << " " << z_id << "\n";
         warning("Star not in range");
         return;
     }
@@ -48,6 +51,7 @@ void close_all_files()
 
 void write_n(int fd, const void *vptr, size_t n)
 {
+    // cout<<"Trying to write to fd: "<<fd<<" data of size: ";
     ssize_t nleft, nwritten;
     const char *ptr;
 
@@ -56,7 +60,7 @@ void write_n(int fd, const void *vptr, size_t n)
     while (nleft > 0)
     {
         if ((nwritten = write(fd, ptr, nleft)) <= 0)
-            critical("There was a serious error while writing a file: " + to_string(nwritten));
+            critical("There was a serious error while writing a file: " + to_string(nwritten) + ", errno: " + to_string(errno));
         nleft -= nwritten;
         ptr += nwritten;
     }
@@ -74,7 +78,7 @@ void write_to_file(const internal_data &data, const string &file)
     if (bindings.count(file) == 0)
     {
         string full_path = write_path + file;
-        int fd = open64(full_path.c_str(), O_CREAT | O_APPEND);
+        int fd = open64(full_path.c_str(), O_CREAT | O_APPEND | O_WRONLY);
         if (fd <= 0)
             critical("There was an error while opening a file: " + to_string(fd));
 
