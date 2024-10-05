@@ -6,13 +6,13 @@
 using namespace std;
 
 xyz_coordinates transform(const initial_raw_data &data) {
-    double ra = data.ra * M_PI / 180;
-    double dec = data.dec * M_PI / 180;
-    double distance = data.distance;
+    long double ra = (long double)data.ra * (long double)M_PI / (long double)180;
+    long double dec = (long double)data.dec * (long double)M_PI / (long double)180;
+    long double distance = (long double)data.distance;
 
-    double x = distance * cos(dec) * cos(ra);
-    double y = distance * cos(dec) * sin(ra);
-    double z = distance * sin(dec);
+    double x = distance * (long double)cos(dec) * (long double)cos(ra);
+    double y = distance * (long double)cos(dec) * (long double)sin(ra);
+    double z = distance * (long double)sin(dec);
 
     return {x, y, z};
 }
