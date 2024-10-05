@@ -50,7 +50,7 @@ struct initial_raw_data
     float ag;
     float av;
 
-    void log(bool descr = true)
+    void log(bool descr = true) const
     {
         if (descr)
             std::cout << "sun_id | ra | dec | distance | mag_g | mag_bp | mean_absolute_v | ag | av\n";
