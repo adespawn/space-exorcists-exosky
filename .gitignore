@@ -1,0 +1,9 @@
+﻿################################################################################
+# Ten plik .gitignore został utworzony automatycznie przez Microsoft(R) Visual Studio.
+################################################################################
+
+/forntend/ImageGen/ImageGen/output.bmp
+/forntend/ImageGen/.vs/ImageGen
+/.vs
+/forntend/ImageGen/x64/Debug
+/forntend/ImageGen/ImageGen/x64/Debug
