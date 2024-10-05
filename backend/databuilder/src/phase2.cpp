@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#include <error.h>
+#include "error.h"
 #include <fcntl.h>
 #include "data_structs.h"
 using namespace std;
@@ -32,6 +32,19 @@ void write_n(int fd, const void *vptr, size_t n)
     return;
 }
 
+void update_info(ofstream &info, const internal_data &data, const string &file)
+{
+    int id_x = file[2] - '0';
+    int id_y = file[4] - '0';
+    int id_z = file[6] - '0';
+    if (id_x == 0) info << x_low << " " << (x_low + x_high) / 2 << " ";
+    else info << (x_low + x_high) / 2 << " " << x_high << " ";
+    if (id_y == 0) info << y_low << " " << (y_low + y_high) / 2 << " ";
+    else info << (y_low + y_high) / 2 << " " << y_high << " ";
+    if (id_z == 0) info << z_low << " " << (z_low + z_high) / 2 << "\n";
+    else info << (z_low + z_high) / 2 << " " << z_high << "\n";
+}
+
 void write_to_file(const string &write_path, const internal_data &data, const string &file)
 {
     if (!registered_atexit)
@@ -42,7 +55,13 @@ void write_to_file(const string &write_path, const internal_data &data, const st
 
     if (bindings.count(file) == 0)
     {
-        string full_path = write_path + file;
+        string full_path = write_path + file + ".info";
+        ofstream info(full_path);
+        if (!info.is_open())
+            critical("There was an error while opening a file: " + full_path);
+        update_info(info, data, file);
+        info.close();
+        full_path = write_path + file + ".raw";
         int fd = open64(full_path.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0666);
         if (fd <= 0)
             critical("There was an error while opening a file: " + to_string(fd));
