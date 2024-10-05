@@ -1,5 +1,6 @@
 #!/bin/bash
 cd src
+rm -f main
 make all
 cp ./main ../
 cd ..
