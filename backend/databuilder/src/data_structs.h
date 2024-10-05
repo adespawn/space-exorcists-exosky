@@ -18,6 +18,14 @@ struct initial_raw_data
     float mean_absolute_v;
     float ag;
     float av;
+
+    void log(bool descr = true)
+    {
+        if (descr)
+            std::cout << "sun_id | ra | dec | distance | mag_g | mag_bp | mean_absolute_v | ag | av\n";
+        std::cout << sun_id << " " << ra << " " << dec << " " << distance << " "
+             << mag_bp << " " << mean_absolute_v << " " << ag << " " << av << "\n";
+    }
 };
 
 #endif
