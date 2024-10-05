@@ -1,5 +1,5 @@
-#ifndef _DISTANCES_H
-#define _DISTANCES_H
+#ifndef _ERROR_H
+#define _ERROR_H
 
 #include <bits/stdc++.h>
 
