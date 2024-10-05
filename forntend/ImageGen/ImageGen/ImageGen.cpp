@@ -43,6 +43,7 @@ struct RGB {
 struct Point {
     int x;
     int y;
+	int brightness;
 
     bool operator==(const Point& other) const {
         return x == other.x && y == other.y;
@@ -102,28 +103,18 @@ std::vector<dane> parseData() {
     }
 
     file.close();
-
-    // Przykładowe wyświetlenie danych
-
-    for (auto& d : dataset) {
-        d.sun_id += 1;
-        d.x += 1;
-        d.y += 1;
-        d.z += 1;
-		d.intensity += 1;
-    }
     return dataset;
 }
 
 // Funkcja do generowania fragmentu bitmapy w pamięci
 void generateBitmapSegment(std::vector<std::vector<RGB>>& image, int width, int startY, int endY, const std::unordered_set<Point>& starSet) {
-    RGB whitePixel = { 255, 255, 255 };
     RGB blackPixel = { 0, 0, 0 };
 
     for (int y = startY; y < endY; ++y) {
         for (int x = 0; x < width; ++x) {
             if (isWhite(x, y, starSet)) {
-                image[y][x] = whitePixel;
+				uint8_t brightness = starSet.find(Point{ x, y })->brightness;
+                image[y][x] = { brightness,brightness,brightness };
             }
             else {
                 image[y][x] = blackPixel;
@@ -188,25 +179,35 @@ void generateBitmap(const char* fileName, int width, const std::unordered_set<Po
 void generateStars(int width, std::unordered_set<Point>& starSet, std::vector<dane> dataset, dane max, dane min) {
     for (auto d : dataset) {
         Point star;
-        star.x = map(d.x,min.x,max.x,0,width);
-        star.y =  map(d.y,min.y,max.y,0,width);
-        starSet.insert(star);
-		int radius=2; //jakaś formuła do obliczenia promienia względem intensywności
+        star.x = map(d.x, min.x, max.x, 0, width);
+        star.y = map(d.y, min.y, max.y, 0, width);
+        int radius = map(d.intensity, min.intensity, max.intensity, 0, 5);
+        int brightness = map(d.intensity, min.intensity, max.intensity, 0, 255);
 
-        // Dodawanie sąsiadów
+        // Dodaj centralny piksel (środkowy piksel gwiazdy)
+        star.brightness = brightness;
+        starSet.insert(star);
+
+        // Dodawanie sąsiadów w obrębie koła
         for (int dx = -radius; dx <= radius; ++dx) {
             for (int dy = -radius; dy <= radius; ++dy) {
-                if (dx == 0 && dy == 0) continue;
-                Point neighbor;
-                neighbor.x = star.x + dx;
-                neighbor.y = star.y + dy;
-                if (neighbor.x >= 0 && neighbor.x < width && neighbor.y >= 0 && neighbor.y < width) {
-                    starSet.insert(neighbor);
+                // Sprawdź, czy punkt leży w kole o promieniu 'radius'
+                if (dx * dx + dy * dy <= radius * radius) {
+                    Point neighbor;
+                    neighbor.x = star.x + dx;
+                    neighbor.y = star.y + dy;
+                    neighbor.brightness = brightness;
+
+                    // Sprawdź, czy punkt sąsiadujący mieści się w granicach
+                    if (neighbor.x >= 0 && neighbor.x < width && neighbor.y >= 0 && neighbor.y < width) {
+                        starSet.insert(neighbor); // Dodaj sąsiada do zbioru
+                    }
                 }
             }
         }
     }
 }
+
 
 dane maxVals(std::vector<dane> dataset) {
 	dane maxValues = { 0, 0, 0, 0, 0 };
@@ -238,7 +239,6 @@ int main() {
     const int width = 2048;
 
     std::vector<dane> dataset = parseData();
-
     dane maxValues = maxVals(dataset);
 	dane minValues = minVals(dataset);
 
@@ -267,6 +267,5 @@ int main() {
 
 /*
 TODO:
-napisać funkcję do obliczania promienia gwiazdy względem jej intensywności
 wybrać odpowiednią ścianę do wyświetlenia
 */
