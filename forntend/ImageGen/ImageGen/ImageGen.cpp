@@ -1,6 +1,8 @@
 ﻿#include <iostream>
 #include <fstream>
 #include <cstdint>
+#include <vector>
+#include <chrono>
 
 #pragma pack(push, 1) 
 struct BMPFileHeader {
@@ -33,18 +35,23 @@ struct RGB {
     uint8_t red;
 };
 
-bool isWhite(int x, int y);
+struct Point {
+	int x;
+	int y;
+};
 
-void generateBitmap(const char* fileName, int width, int height) {
+bool isWhite(int x, int y, std::vector<Point> stars);
+
+void generateBitmap(const char* fileName, int width, std::vector<Point> stars) {
     BMPFileHeader fileHeader;
     BMPInfoHeader infoHeader;
 
     infoHeader.width = width;
-    infoHeader.height = height;
+    infoHeader.height = width;
 
     // Obliczamy rozmiar danych pikseli (z wyrównaniem do 4 bajtów na każdą linię)
     int rowStride = (width * 3 + 3) & ~3;  // Każda linia musi mieć rozmiar będący wielokrotnością 4 bajtów
-    fileHeader.fileSize = sizeof(BMPFileHeader) + sizeof(BMPInfoHeader) + rowStride * height;
+    fileHeader.fileSize = sizeof(BMPFileHeader) + sizeof(BMPInfoHeader) + rowStride * width;
 
     std::ofstream file(fileName, std::ios::binary);
     if (file) {
@@ -54,9 +61,10 @@ void generateBitmap(const char* fileName, int width, int height) {
 
         RGB blackPixel = { 0, 0, 0 };
 		RGB whitePixel = { 255, 255, 255 };
-        for (int y = 0; y < height; ++y) {
+        
+        for (int y = 0; y < width; ++y) {
             for (int x = 0; x < width; ++x) {
-                if (isWhite(x,y)) {
+                if (isWhite(x,y,stars)) {
                     file.write(reinterpret_cast<const char*>(&whitePixel), sizeof(whitePixel));
                 }
                 else {
@@ -76,12 +84,26 @@ void generateBitmap(const char* fileName, int width, int height) {
     }
 }
 
-bool isWhite(int x, int y) {
-	return (x / 64 + y / 64) % 5 == 0;
+bool isWhite(int x, int y, std::vector<Point> stars) {
+    for (auto star : stars)
+        if (x == star.x && y == star.y)
+            return true;
+        else 
+            return false;
 }
 
 int main() {
-    generateBitmap("output.bmp", 2048, 2048); 
+    auto start = std::chrono::high_resolution_clock::now();
+    std::vector<Point> stars;
+    stars.push_back({ 1000,1000 });
+    stars.push_back({ 1001,1000 });
+    stars.push_back({ 1000,1001 });
+    stars.push_back({ 1001,1001 });
+    generateBitmap("output.bmp", 2048, stars);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration = end - start;
+    std::cout << "Czas działania: " << duration.count() << " sekund" << std::endl;
 	system("output.bmp");
+
     return 0;
 }
