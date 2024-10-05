@@ -3,3 +3,8 @@ file_operations.o
 light.o 
 main.o 
 main
+phase1.o 
+phase1
+phase2.o 
+phase2
+.log

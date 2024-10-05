@@ -6,6 +6,7 @@ using namespace std;
 
 bool registered_atexit = false;
 unordered_map<string, int> bindings;
+double x_low, x_high, y_low, y_high, z_low, z_high;
 
 void close_all_files()
 {
@@ -71,7 +72,6 @@ int main(int argc, char* argv[])
     //1. Determine the cords, and find new
     //2. Read file LINE BY LINE and write it to correct file
     string full_path = path + file_name + ".info";
-    double x_low, x_high, y_low, y_high, z_low, z_high;
     ifstream info(full_path);
     if (!info.is_open()) {
         critical("No info file");
