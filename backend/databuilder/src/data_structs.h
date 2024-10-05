@@ -3,6 +3,27 @@
 
 #include <bits/stdc++.h>
 
+struct __attribute__((packed)) xyz_coordinates
+{
+    double x;
+    double y;
+    double z;
+};
+
+struct __attribute__((packed)) light_level{
+    float mag_g;
+    float mag_bp;
+    float mean_absolute_v;
+    float ag;
+    float av;
+};
+
+struct __attribute__((packed)) internal_data {
+    long sun_id;
+    xyz_coordinates coors;
+    light_level light;
+};;
+
 struct initial_raw_data
 {
     long sun_id;
