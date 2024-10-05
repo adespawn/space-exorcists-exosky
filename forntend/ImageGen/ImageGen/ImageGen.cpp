@@ -36,8 +36,8 @@ struct RGB {
 };
 
 struct Point {
-	int x;
-	int y;
+    int x;
+    int y;
 };
 
 bool isWhite(int x, int y, std::vector<Point> stars);
@@ -59,12 +59,12 @@ void generateBitmap(const char* fileName, int width, std::vector<Point> stars) {
         file.write(reinterpret_cast<const char*>(&fileHeader), sizeof(fileHeader));
         file.write(reinterpret_cast<const char*>(&infoHeader), sizeof(infoHeader));
 
-        RGB blackPixel = { 0, 0, 0 };
-		RGB whitePixel = { 255, 255, 255 };
-        
+        RGB whitePixel = { 0, 0, 0 };
+        RGB blackPixel = { 255, 255, 255 };
+
         for (int y = 0; y < width; ++y) {
             for (int x = 0; x < width; ++x) {
-                if (isWhite(x,y,stars)) {
+                if (isWhite(x, y, stars)) {
                     file.write(reinterpret_cast<const char*>(&whitePixel), sizeof(whitePixel));
                 }
                 else {
@@ -85,25 +85,49 @@ void generateBitmap(const char* fileName, int width, std::vector<Point> stars) {
 }
 
 bool isWhite(int x, int y, std::vector<Point> stars) {
-    for (auto star : stars)
-        if (x == star.x && y == star.y)
+    for (const auto& star : stars) {
+        if (x == star.x && y == star.y) {
             return true;
-        else 
-            return false;
+        }
+    }
+    return false;
+}
+
+void generateStars(int width, std::vector<Point>& stars, const int noStars) {
+    srand(static_cast<unsigned int>(time(0)));
+    for (int i = 0; i < noStars; ++i) {
+        Point star;
+        star.x = rand() % width;  // Gwiazda w losowym miejscu z marginesem
+        star.y = rand() % width;
+        stars.push_back(star);
+
+        // Dodajemy 9 sąsiednich pikseli wokół gwiazdy
+        for (int dx = -1; dx <= 1; ++dx) {
+            for (int dy = -1; dy <= 1; ++dy) {
+                if (dx == 0 && dy == 0) continue;  // Pomijamy środek (gwiazda już dodana)
+                Point neighbor;
+                neighbor.x = star.x + dx;
+                neighbor.y = star.y + dy;
+                // Sprawdzamy, czy sąsiad mieści się w obszarze
+                if (neighbor.x >= 0 && neighbor.x < width && neighbor.y >= 0 && neighbor.y < width) {
+                    stars.push_back(neighbor);
+                }
+            }
+        }
+    }
 }
 
 int main() {
+    const int width = 2048;
+    const int noStars = 10000;
     auto start = std::chrono::high_resolution_clock::now();
     std::vector<Point> stars;
-    stars.push_back({ 1000,1000 });
-    stars.push_back({ 1001,1000 });
-    stars.push_back({ 1000,1001 });
-    stars.push_back({ 1001,1001 });
-    generateBitmap("output.bmp", 2048, stars);
+    generateStars(width, stars, noStars);
+    generateBitmap("output.bmp", width, stars);
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;
     std::cout << "Czas działania: " << duration.count() << " sekund" << std::endl;
-	system("output.bmp");
+    system("output.bmp");
 
     return 0;
 }
