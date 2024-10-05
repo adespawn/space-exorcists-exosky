@@ -1,4 +1,6 @@
 backend/databuilder/*.raw
 backend/databuilder/main
 backend/databuilder/src/main
-backend/databuilder/.log
+backend/databuilder/.log/*
+backend/databuilder/layers/*
+backend/databuilder/layers/
