@@ -8,3 +8,7 @@ phase1
 phase2.o 
 phase2
 .log
+phase3
+phase3.o
+api
+api.o
