@@ -23,6 +23,20 @@ vector<initial_raw_data> read_raw()
     return res;
 }
 
+void zero_layer_parse_data(const internal_data &data)
+{
+    int x_id = (data.coors.x + (long double)100000) / (long double)40000;
+    int y_id = (data.coors.y + (long double)100000) / (long double)40000;
+    int z_id = (data.coors.z + (long double)100000) / (long double)40000;
+    if (x_id < 0 || x_id > 4 || y_id < 0 || y_id > 4 || z_id < 0 || z_id > 4)
+    {
+        warning("Star not in range");
+        return;
+    }
+    string file_name = "0_" + to_string(x_id) + "_" + to_string(y_id) + "_" + to_string(z_id) + ".raw";
+    write_to_file(data, file_name);
+}
+
 bool registered_atexit = false;
 unordered_map<string, int> bindings;
 
@@ -61,9 +75,9 @@ void write_to_file(const internal_data &data, const string &file)
     {
         string full_path = write_path + file;
         int fd = open64(full_path.c_str(), O_CREAT | O_APPEND);
-        if(fd <= 0)
-            critical("There was an error while opening a file: "+to_string(fd));
-        
+        if (fd <= 0)
+            critical("There was an error while opening a file: " + to_string(fd));
+
         bindings[file] = fd;
     }
 
