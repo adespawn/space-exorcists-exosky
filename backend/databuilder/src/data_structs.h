@@ -34,6 +34,12 @@ struct __attribute__((packed)) internal_data
     }
 };
 
+struct final_data {
+    long sun_id;
+    xyz_coordinates coords;
+    double light_intensity;
+};
+
 struct initial_raw_data
 {
     long sun_id;

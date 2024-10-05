@@ -17,3 +17,8 @@ xyz_coordinates transform(const initial_raw_data &data)
 
     return {x, y, z};
 }
+
+double calculate_distance(const xyz_coordinates &a, const xyz_coordinates &b)
+{
+    return sqrt(pow((long double)a.x - (long double)b.x, 2) + pow((long double)a.y - (long double)b.y, 2) + pow((long double)a.z - (long double)b.z, 2));
+}

@@ -12,3 +12,8 @@ light_level parse(const initial_raw_data &data)
             data.ag,
             data.av};
 }
+
+double light_intensity(double absolute_magnitude, double distance)
+{
+    return absolute_magnitude + 5 * log10(distance) - 5;
+}

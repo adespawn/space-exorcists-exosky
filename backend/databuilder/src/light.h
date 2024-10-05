@@ -5,5 +5,6 @@
 #include "data_structs.h"
 
 light_level parse(const initial_raw_data &data);
+double light_intensity(double absolute_magnitude, double distance);
 
 #endif
