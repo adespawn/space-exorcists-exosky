@@ -26,7 +26,7 @@ function work_file(c_path, c_file){
     if (!fs.existsSync(new_dir))
         fs.mkdirSync(new_dir)
 
-    exec(`./phase_2 ${c_path} ${base_filename} &>>../.log/phase_2_cpp`, function (e, out, stderr) {
+    exec(`bash ./exe.sh ${c_path} ${base_filename} &>>../.log/phase_2_cpp`, function (e, out, stderr) {
         if (e) {
             console.log(e)
         }
