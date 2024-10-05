@@ -2,10 +2,12 @@
 #include "error.h"
 #include <fcntl.h>
 
-const std::string write_path = "/media/adespawn/01524459-1aff-4407-a4a6-68c6a130a898/data/layer_0/";
+std::string write_path = "/media/adespawn/01524459-1aff-4407-a4a6-68c6a130a898/data/layer_0/";
 
 using namespace std;
 
+
+// For celestial. 
 vector<initial_raw_data> read_raw()
 {
     vector<initial_raw_data> res;
