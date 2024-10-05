@@ -6,6 +6,8 @@
 #include <thread>
 #include <mutex>
 #include <unordered_set>
+#include <string>
+#include <sstream>
 
 #pragma pack(push, 1)
 struct BMPFileHeader {
@@ -47,6 +49,15 @@ struct Point {
     }
 };
 
+struct dane
+{
+    long sun_id;
+    double x;
+    double y;
+    double z;
+    double intensity;
+};
+
 namespace std {
     template <>
     struct hash<Point> {
@@ -56,8 +67,52 @@ namespace std {
     };
 }
 
+double map(double x, double in_min, double in_max, double out_min, double out_max) {
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
 bool isWhite(int x, int y, const std::unordered_set<Point>& starSet) {
     return starSet.find(Point{ x, y }) != starSet.end();
+}
+
+std::vector<dane> parseData() {
+    std::ifstream file("data.txt");
+    std::string line;
+    std::vector<dane> dataset;
+
+    if (!file) {
+        std::cerr << "Unable to open file data.txt";
+        return dataset;
+    }
+
+    // Wczytujemy każdą linię z pliku
+    while (getline(file, line))
+    {
+        std::istringstream iss(line);
+        dane temp;
+
+        // Parsujemy wartości z linii i przypisujemy je do odpowiednich pól struktury
+        if (!(iss >> temp.sun_id >> temp.x >> temp.y >> temp.z >> temp.intensity)) {
+            std::cerr << "Error reading line: " << line << std::endl;
+            continue; // Pomiń linię w razie błędu
+        }
+
+        // Dodajemy dane do wektora
+        dataset.push_back(temp);
+    }
+
+    file.close();
+
+    // Przykładowe wyświetlenie danych
+
+    for (auto& d : dataset) {
+        d.sun_id += 1;
+        d.x += 1;
+        d.y += 1;
+        d.z += 1;
+		d.intensity += 1;
+    }
+    return dataset;
 }
 
 // Funkcja do generowania fragmentu bitmapy w pamięci
@@ -130,17 +185,17 @@ void generateBitmap(const char* fileName, int width, const std::unordered_set<Po
     }
 }
 
-void generateStars(int width, std::unordered_set<Point>& starSet, const int noStars) {
-    srand(static_cast<unsigned int>(time(0)));
-    for (int i = 0; i < noStars; ++i) {
+void generateStars(int width, std::unordered_set<Point>& starSet, std::vector<dane> dataset, dane max, dane min) {
+    for (auto d : dataset) {
         Point star;
-        star.x = rand() % width;
-        star.y = rand() % width;
+        star.x = map(d.x,min.x,max.x,0,width);
+        star.y =  map(d.y,min.y,max.y,0,width);
         starSet.insert(star);
+		int radius=2; //jakaś formuła do obliczenia promienia względem intensywności
 
         // Dodawanie sąsiadów
-        for (int dx = -1; dx <= 1; ++dx) {
-            for (int dy = -1; dy <= 1; ++dy) {
+        for (int dx = -radius; dx <= radius; ++dx) {
+            for (int dy = -radius; dy <= radius; ++dy) {
                 if (dx == 0 && dy == 0) continue;
                 Point neighbor;
                 neighbor.x = star.x + dx;
@@ -153,14 +208,47 @@ void generateStars(int width, std::unordered_set<Point>& starSet, const int noSt
     }
 }
 
+dane maxVals(std::vector<dane> dataset) {
+	dane maxValues = { 0, 0, 0, 0, 0 };
+
+	for (auto d : dataset) {
+		if (d.x > maxValues.x) maxValues.x = d.x;
+		if (d.y > maxValues.y) maxValues.y = d.y;
+		if (d.z > maxValues.z) maxValues.z = d.z;
+		if (d.intensity > maxValues.intensity) maxValues.intensity = d.intensity;
+	}
+
+	return maxValues;
+}
+
+dane minVals(std::vector<dane> dataset) {
+	dane minValues = { 0, 0, 0, 0, 0 };
+
+	for (auto d : dataset) {
+		if (d.x < minValues.x) minValues.x = d.x;
+		if (d.y < minValues.y) minValues.y = d.y;
+		if (d.z < minValues.z) minValues.z = d.z;
+		if (d.intensity < minValues.intensity) minValues.intensity = d.intensity;
+	}
+
+	return minValues;
+}
+
 int main() {
     const int width = 2048;
-    const int noStars = 50000;
 
+    std::vector<dane> dataset = parseData();
+
+    dane maxValues = maxVals(dataset);
+	dane minValues = minVals(dataset);
+
+    for (const auto& d : dataset) {
+        std::cout << "Sun ID: " << d.sun_id << ", x: " << d.x << ", y: " << d.y << ", z: " << d.z << ", intensity: " << d.intensity << std::endl;
+    }
     auto start = std::chrono::high_resolution_clock::now();
 
     std::unordered_set<Point> starSet;
-    generateStars(width, starSet, noStars);
+    generateStars(width, starSet, dataset, maxValues, minValues);
 
     generateBitmap("output.bmp", width, starSet);
 
@@ -175,3 +263,10 @@ int main() {
 
     return 0;
 }
+
+
+/*
+TODO:
+napisać funkcję do obliczania promienia gwiazdy względem jej intensywności
+wybrać odpowiednią ścianę do wyświetlenia
+*/
