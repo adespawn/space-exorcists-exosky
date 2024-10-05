@@ -97,7 +97,7 @@ public:
     // processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
     void ProcessMouseScroll(float yoffset)
     {
-        Zoom -= 3* (float)yoffset;
+        Zoom -= 3 * (float)yoffset;
         if (Zoom < 25.0f)
             Zoom = 25.0f;
         if (Zoom > 90.0f)

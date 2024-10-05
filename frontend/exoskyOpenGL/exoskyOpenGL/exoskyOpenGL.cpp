@@ -6,6 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <font.h>
 #include <shader.h>
 #include <camera.h>
 #include "texture_loader.h"
@@ -36,6 +37,9 @@ bool firstMouse = true, leftMouseButton = false;
 //czas symulacji moze bedzie potrzebny jak nie to wywalic
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+
+//freeType font renderer
+FontRenderer* fontRenderer;
 
 const unsigned int segments = 32;
 const unsigned int rings = 16;
@@ -758,6 +762,14 @@ int main()
     };
     unsigned int cubemapTexture = loadCubemap(faces);
 
+    // Initialize font rendering
+    fontRenderer = new FontRenderer("NunitoSans_7pt-Light.ttf", SCR_WIDTH, SCR_HEIGHT);
+
+    Shader textShader("text.vs", "text.fs");
+    glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(SCR_WIDTH), 0.0f, static_cast<float>(SCR_HEIGHT));
+    textShader.use();
+    glUniformMatrix4fv(glGetUniformLocation(textShader.ID, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
     // shader configuration
     shader.use();
     shader.setInt("texture1", 0);
@@ -835,6 +847,11 @@ int main()
         glBindVertexArray(0);
         glDepthFunc(GL_LESS); //koniec zmiany depth passu ***
 
+        //render text
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        fontRenderer->RenderText(textShader, "POMOCY", 25.0f, 25.0f, 8.0f, glm::vec3(1.0, 1.0, 1.0));
+
         //buffer swap (dwukrotne buferowanie Kajtek o tym gadal)
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -845,6 +862,7 @@ int main()
     glDeleteVertexArrays(1, &skyboxVAO);
     glDeleteBuffers(1, &floorVBO);
     glDeleteBuffers(1, &skyboxVBO);
+    delete fontRenderer;
 
     glfwTerminate();
     return 0;
