@@ -50,16 +50,18 @@
     <ClInclude Include="font.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="shphereVertecies.h">
+    <ClInclude Include="objectVertecies.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="6.1.cubemaps.fs" />
-    <None Include="6.1.skybox.fs" />
-    <None Include="6.1.cubemaps.vs" />
-    <None Include="6.1.skybox.vs" />
+    <None Include="cubemaps.fs" />
+    <None Include="skybox.fs" />
+    <None Include="cubemaps.vs" />
+    <None Include="skybox.vs" />
     <None Include="text.vs" />
     <None Include="text.fs" />
+    <None Include="HUD.vs" />
+    <None Include="HUD.fs" />
   </ItemGroup>
 </Project>
