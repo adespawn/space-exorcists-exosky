@@ -1,6 +1,9 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/quaternion.hpp>
 
 enum Camera_Movement {
     FORWARD,
@@ -27,9 +30,14 @@ public:
     glm::vec3 Right;
     glm::vec3 WorldUp;
 
+    //kwaterion rotacji :(
+    glm::quat Rotation;
+
+    /* //ta chcialoby sie
     // euler Angles
     float Yaw;
     float Pitch;
+    */
 
     // camera options
     float MovementSpeed;
@@ -37,17 +45,16 @@ public:
     float Zoom;
 
     // constructor with vectors
-    Camera(glm::vec3 position = glm::vec3(0.0f, PLANET_RADIUS, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH)
+    Camera(glm::vec3 position = glm::vec3(0.0f, PLANET_RADIUS, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f))
         : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
     {
         Position = position;
         WorldUp = up;
-        Yaw = yaw;
-        Pitch = pitch;
+        Rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
         updateCameraVectors();
     }
 
-    // returns the view matrix calculated using Euler Angles and the LookAt Matrix
+    // returns the view matrix calculated using Quaternions and the LookAt Matrix
     glm::mat4 GetViewMatrix()
     {
         return glm::lookAt(Position, Position + Front, Up);
@@ -72,40 +79,37 @@ public:
         glm::vec3 normalizedPosition = glm::normalize(Position);
         movement = glm::normalize(movement - glm::dot(movement, normalizedPosition) * normalizedPosition);
 
-        Position += movement * velocity;
+        // Calculate new position
+        glm::vec3 newPosition = Position + movement * velocity;
 
-        // Ensure the camera stays on the planet surface
-        Position = glm::normalize(Position) * PLANET_RADIUS;
+        // Adjust the camera position to stay on the planet surface
+        newPosition = glm::normalize(newPosition) * PLANET_RADIUS;
+
+        // Calculate the rotation quaternion from old to new position
+        glm::quat rotationDelta = glm::rotation(glm::normalize(Position), glm::normalize(newPosition));
+
+        // Apply the rotation to the camera's orientation
+        Rotation = rotationDelta * Rotation;
+
+        // Update the position
+        Position = newPosition;
 
         updateCameraVectors();
     }
 
-    // processes input received from a mouse input system.
+    // processes input mouse
     void ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch = true)
     {
         xoffset *= MouseSensitivity;
         yoffset *= MouseSensitivity;
 
-        Yaw += xoffset;
-        Pitch += yoffset;
-        /*
-        if (constrainPitch)
-        {
-            if (Pitch > 179.0f)
-                Pitch = 179.0f;
-            if (Pitch < -179.0f)
-                Pitch = -179.0f;
-        }
-        */
-        if (constrainPitch)
-        {
-            if (Pitch > 89.0f)
-                Pitch = 89.0f;
-            if (Pitch < -89.0f)
-                Pitch = -89.0f;
-        }
+        // Create quaternions for pitch and yaw rotations
+        glm::quat pitchQuat = glm::angleAxis(glm::radians(yoffset), Right);
+        glm::quat yawQuat = glm::angleAxis(glm::radians(-xoffset), glm::normalize(Position));
 
-        // Recalculate the camera's direction vectors
+        // Combine rotations
+        Rotation = yawQuat * pitchQuat * Rotation;
+
         updateCameraVectors();
     }
 
@@ -120,20 +124,12 @@ public:
     }
 
 private:
-    // calculates the front vector from the Camera's (updated) Euler Angles
     void updateCameraVectors()
     {
-        // Calculate the new Front vector
-        glm::vec3 front;
-        front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
-        front.y = sin(glm::radians(Pitch));
-        front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
-        Front = glm::normalize(front);
+        Front = glm::normalize(glm::rotate(Rotation, glm::vec3(0.0f, 0.0f, -1.0f)));
 
-        // Calculate the new Right vector
         Right = glm::normalize(glm::cross(Front, glm::normalize(Position)));
 
-        // Calculate the new Up vector
         Up = glm::normalize(glm::cross(Right, Front));
     }
 };
