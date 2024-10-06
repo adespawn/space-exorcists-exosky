@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <string>
 #include <sstream>
+#include <unordered_map>
 
 #pragma pack(push, 1)
 struct BMPFileHeader {
@@ -118,24 +119,37 @@ dane maxVals(const std::vector<dane>& dataset) {
 }
 
 // Zastosuj to samo podejście co w pierwszym kodzie
-void generateStars(int width, std::unordered_set<Point>& starSet, const std::vector<dane>& dataset, const dane& max, const dane& min) {
+void generateStars(int width, std::unordered_map<Point, int>& starSet, const std::vector<dane>& dataset, const dane& max, const dane& min){
     for (const auto& d : dataset) {
         Point star;
         star.x = static_cast<int>(map(d.x, min.x, max.x, 0, width));
         star.y = static_cast<int>(map(d.y, min.y, max.y, 0, width));
         int brightness = static_cast<int>(map(d.intensity, min.intensity, max.intensity, 0, 255));
-        star.brightness = brightness;
-        starSet.insert(star);
 
-        int radius = static_cast<int>(map(d.intensity, min.intensity, max.intensity, 0, 5));
+        int radius = static_cast<int>(map(d.intensity, min.intensity, max.intensity, 1, 5));  // Promień łuny
 
-        // Dodawanie sąsiadów z jasnością
+        // Dodawanie sąsiadów z łuną świetlną o stopniowo malejącej jasności
         for (int dx = -radius; dx <= radius; ++dx) {
             for (int dy = -radius; dy <= radius; ++dy) {
-                if (dx * dx + dy * dy <= radius * radius) {
-                    Point neighbor = { star.x + dx, star.y + dy, brightness };
+                int distanceSq = dx * dx + dy * dy;
+                if (distanceSq <= radius * radius) {
+                    Point neighbor = { star.x + dx, star.y + dy };
+
                     if (neighbor.x >= 0 && neighbor.x < width && neighbor.y >= 0 && neighbor.y < width) {
-                        starSet.insert(neighbor);
+                        // Obliczamy jasność sąsiadów, która maleje wraz z odległością od środka gwiazdy
+                        int distance = static_cast<int>(sqrt(distanceSq));
+                        int reducedBrightness = brightness * (1.0 - static_cast<double>(distance) / radius);
+                        reducedBrightness = std::max(0, reducedBrightness);  // Upewniamy się, że jasność nie będzie ujemna
+
+                        // Sumowanie jasności sąsiadów, zamiast nadpisywania
+                        auto it = starSet.find(neighbor);
+                        if (it != starSet.end()) {
+                            // Jeśli już istnieje punkt, sumujemy jasność, ale nie przekraczamy 255
+                            it->second = std::min(255, it->second + reducedBrightness);
+                        }
+                        else {
+                            starSet[neighbor] = reducedBrightness;
+                        }
                     }
                 }
             }
@@ -143,14 +157,14 @@ void generateStars(int width, std::unordered_set<Point>& starSet, const std::vec
     }
 }
 
-void generateBitmapSegment(std::vector<std::vector<RGB>>& image, int width, int startY, int endY, const std::unordered_set<Point>& starSet) {
+void generateBitmapSegment(std::vector<std::vector<RGB>>& image, int width, int startY, int endY, const std::unordered_map<Point, int>& starSet) {
     RGB blackPixel = { 0, 0, 0 };
 
     for (int y = startY; y < endY; ++y) {
         for (int x = 0; x < width; ++x) {
             auto it = starSet.find(Point{ x, y });
             if (it != starSet.end()) {
-                uint8_t brightness = it->brightness;
+                uint8_t brightness = static_cast<uint8_t>(it->second);  // Jasność punktu
                 image[y][x] = { brightness, brightness, brightness };
             }
             else {
@@ -160,7 +174,7 @@ void generateBitmapSegment(std::vector<std::vector<RGB>>& image, int width, int 
     }
 }
 
-void generateBitmap(const char* fileName, int width, const std::unordered_set<Point>& starSet) {
+void generateBitmap(const char* fileName, int width, const std::unordered_map<Point, int>& starSet) {
     BMPFileHeader fileHeader;
     BMPInfoHeader infoHeader;
 
@@ -213,11 +227,12 @@ void generateBitmap(const char* fileName, int width, const std::unordered_set<Po
     }
 }
 
+
 void generateCubeSides(int width, const std::vector<dane>& xy_positive, const std::vector<dane>& xy_negative,
     const std::vector<dane>& xz_positive, const std::vector<dane>& xz_negative,
     const std::vector<dane>& yz_positive, const std::vector<dane>& yz_negative) {
 
-    std::unordered_set<Point> starSet;
+    std::unordered_map<Point, int> starSet;
     dane max = maxVals(xy_positive), min = minVals(xy_positive);
 
     // Side 1: xy_positive
@@ -293,12 +308,19 @@ void projectOntoPlanes(const std::vector<dane>& dataset,
 
 int main() {
     auto dataset = parseData();
-
+        auto projectStart = std::chrono::high_resolution_clock::now();
     std::vector<dane> xy_positive, xy_negative, xz_positive, xz_negative, yz_positive, yz_negative;
     projectOntoPlanes(dataset, xy_positive, xy_negative, xz_positive, xz_negative, yz_positive, yz_negative);
+        auto projectEnd = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> projectDuration = projectEnd - projectStart;
+        std::cout << "Czas działania projectOntoPlanes: " << projectDuration.count() << " sekund" << std::endl;
 
+        auto sidesStart = std::chrono::high_resolution_clock::now();
     int width = 2048;
     generateCubeSides(width, xy_positive, xy_negative, xz_positive, xz_negative, yz_positive, yz_negative);
+        auto sidesEnd = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> sidesDuration = sidesEnd - sidesStart;
+        std::cout << "Czas działania generateCubeSides: " << sidesDuration.count() << " sekund" << std::endl;
 
     return 0;
 }
