@@ -50,11 +50,11 @@ FontRenderer* fontRenderer;
 
 const unsigned int segments = 64;
 const unsigned int rings = 32;
-bool drawGridLines = true;
+bool drawGridLines = false;
 
 int main()
 {
-    generateImages();
+    //generateImages();
     //boiler code
     //inicjalizacja glfw PO INICJALIZACJI OPENGP!
     glfwInit();
