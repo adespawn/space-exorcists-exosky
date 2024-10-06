@@ -54,7 +54,7 @@ bool drawGridLines = false;
 
 int main()
 {
-    //generateImages();
+    generateImages();
     //boiler code
     //inicjalizacja glfw PO INICJALIZACJI OPENGP!
     glfwInit();
