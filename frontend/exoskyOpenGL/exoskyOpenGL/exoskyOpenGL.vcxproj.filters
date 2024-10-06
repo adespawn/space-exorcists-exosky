@@ -56,6 +56,9 @@
     <ClInclude Include="buttonBoundingBoxes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ImageGen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="cubemaps.fs" />

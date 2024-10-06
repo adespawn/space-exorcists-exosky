@@ -146,6 +146,7 @@
     <ClInclude Include="camera.h" />
     <ClInclude Include="font.h" />
     <ClInclude Include="ft2build.h" />
+    <ClInclude Include="ImageGen.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="objectVertecies.h" />
     <ClInclude Include="stb_image.h" />

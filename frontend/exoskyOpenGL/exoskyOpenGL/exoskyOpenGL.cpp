@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 
+#include <ImageGen.h>
+
 //staandardowy setup OpenGL
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -52,6 +54,7 @@ bool drawGridLines = true;
 
 int main()
 {
+    generateImages();
     //boiler code
     //inicjalizacja glfw PO INICJALIZACJI OPENGP!
     glfwInit();
