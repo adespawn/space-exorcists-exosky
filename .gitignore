@@ -6,3 +6,4 @@ backend/databuilder/layers/*
 backend/databuilder/layers/
 backend/databuilder/src/*.o
 backend/databuilder/src/phase3
+backend/downloader/node_modules/*
