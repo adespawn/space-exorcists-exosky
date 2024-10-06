@@ -4,3 +4,6 @@ backend/databuilder/src/main
 backend/databuilder/.log/*
 backend/databuilder/layers/*
 backend/databuilder/layers/
+backend/databuilder/src/*.o
+backend/databuilder/src/phase3
+backend/downloader/node_modules/*
