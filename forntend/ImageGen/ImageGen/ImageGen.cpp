@@ -119,16 +119,35 @@ dane maxVals(const std::vector<dane>& dataset) {
 }
 
 // Zastosuj to samo podejście co w pierwszym kodzie
-void generateStars(int width, std::unordered_map<Point, int>& starSet, const std::vector<dane>& dataset, const dane& max, const dane& min){
+enum CubeFace { XY_POS, XY_NEG, XZ_POS, XZ_NEG, YZ_POS, YZ_NEG };
+
+void generateStars(int width, std::unordered_map<Point, int>& starSet,
+    const std::vector<dane>& dataset, const dane& max, const dane& min,
+    CubeFace face) {
     for (const auto& d : dataset) {
         Point star;
-        star.x = static_cast<int>(map(d.x, min.x, max.x, 0, width));
-        star.y = static_cast<int>(map(d.y, min.y, max.y, 0, width));
+        // Map coordinates based on the cube face
+        switch (face) {
+        case XY_POS:
+        case XY_NEG:
+            star.x = static_cast<int>((d.x + 1.0) * 0.5 * (width - 1));
+            star.y = static_cast<int>((d.y + 1.0) * 0.5 * (width - 1));
+            break;
+        case XZ_POS:
+        case XZ_NEG:
+            star.x = static_cast<int>((d.x + 1.0) * 0.5 * (width - 1));
+            star.y = static_cast<int>((d.z + 1.0) * 0.5 * (width - 1));
+            break;
+        case YZ_POS:
+        case YZ_NEG:
+            star.x = static_cast<int>((d.y + 1.0) * 0.5 * (width - 1));
+            star.y = static_cast<int>((d.z + 1.0) * 0.5 * (width - 1));
+            break;
+        }
+
         int brightness = static_cast<int>(map(d.intensity, min.intensity, max.intensity, 0, 255));
+        int radius = static_cast<int>(map(d.intensity, min.intensity, max.intensity, 1, 5));
 
-        int radius = static_cast<int>(map(d.intensity, min.intensity, max.intensity, 1, 5));  // Promień łuny
-
-        // Dodawanie sąsiadów z łuną świetlną o stopniowo malejącej jasności
         for (int dx = -radius; dx <= radius; ++dx) {
             for (int dy = -radius; dy <= radius; ++dy) {
                 int distanceSq = dx * dx + dy * dy;
@@ -136,15 +155,12 @@ void generateStars(int width, std::unordered_map<Point, int>& starSet, const std
                     Point neighbor = { star.x + dx, star.y + dy };
 
                     if (neighbor.x >= 0 && neighbor.x < width && neighbor.y >= 0 && neighbor.y < width) {
-                        // Obliczamy jasność sąsiadów, która maleje wraz z odległością od środka gwiazdy
                         int distance = static_cast<int>(sqrt(distanceSq));
                         int reducedBrightness = brightness * (1.0 - static_cast<double>(distance) / radius);
-                        reducedBrightness = std::max(0, reducedBrightness);  // Upewniamy się, że jasność nie będzie ujemna
+                        reducedBrightness = std::max(0, reducedBrightness);
 
-                        // Sumowanie jasności sąsiadów, zamiast nadpisywania
                         auto it = starSet.find(neighbor);
                         if (it != starSet.end()) {
-                            // Jeśli już istnieje punkt, sumujemy jasność, ale nie przekraczamy 255
                             it->second = std::min(255, it->second + reducedBrightness);
                         }
                         else {
@@ -233,81 +249,121 @@ void generateCubeSides(int width, const std::vector<dane>& xy_positive, const st
     const std::vector<dane>& yz_positive, const std::vector<dane>& yz_negative) {
 
     std::unordered_map<Point, int> starSet;
-    dane max = maxVals(xy_positive), min = minVals(xy_positive);
+    dane max, min;
 
-    // Side 1: xy_positive
+    // Side 1: xy_positive (top)
+    max = maxVals(xy_positive);
+    min = minVals(xy_positive);
     starSet.clear();
-    generateStars(width, starSet, xy_positive, max, min);
+    generateStars(width, starSet, xy_positive, max, min, XY_POS);
     generateBitmap("top.bmp", width, starSet);
 
-    // Side 2: xy_negative
+    // Side 2: xy_negative (bottom)
+    max = maxVals(xy_negative);
+    min = minVals(xy_negative);
     starSet.clear();
-    generateStars(width, starSet, xy_negative, max, min);
+    generateStars(width, starSet, xy_negative, max, min, XY_NEG);
     generateBitmap("bottom.bmp", width, starSet);
 
-    // Side 3: xz_positive
+    // Side 3: xz_positive (front)
+    max = maxVals(xz_positive);
+    min = minVals(xz_positive);
     starSet.clear();
-    generateStars(width, starSet, xz_positive, max, min);
-    generateBitmap("left.bmp", width, starSet);
+    generateStars(width, starSet, xz_positive, max, min, XZ_POS);
+    generateBitmap("front.bmp", width, starSet);
 
-    // Side 4: xz_negative
+    // Side 4: xz_negative (back)
+    max = maxVals(xz_negative);
+    min = minVals(xz_negative);
     starSet.clear();
-    generateStars(width, starSet, xz_negative, max, min);
-    generateBitmap("right.bmp", width, starSet);
-
-    // Side 5: yz_positive
-    starSet.clear();
-    generateStars(width, starSet, yz_positive, max, min);
+    generateStars(width, starSet, xz_negative, max, min, XZ_NEG);
     generateBitmap("back.bmp", width, starSet);
 
-    // Side 6: yz_negative
+    // Side 5: yz_positive (right)
+    max = maxVals(yz_positive);
+    min = minVals(yz_positive);
     starSet.clear();
-    generateStars(width, starSet, yz_negative, max, min);
-    generateBitmap("front.bmp", width, starSet);
+    generateStars(width, starSet, yz_positive, max, min, YZ_POS);
+    generateBitmap("right.bmp", width, starSet);
+
+    // Side 6: yz_negative (left)
+    max = maxVals(yz_negative);
+    min = minVals(yz_negative);
+    starSet.clear();
+    generateStars(width, starSet, yz_negative, max, min, YZ_NEG);
+    generateBitmap("left.bmp", width, starSet);
 }
 
 void projectOntoPlanes(const std::vector<dane>& dataset,
     std::vector<dane>& xy_positive, std::vector<dane>& xy_negative,
     std::vector<dane>& xz_positive, std::vector<dane>& xz_negative,
     std::vector<dane>& yz_positive, std::vector<dane>& yz_negative) {
-    for (const auto& data : dataset) {
-        double abs_x = std::abs(data.x);
-        double abs_y = std::abs(data.y);
-        double abs_z = std::abs(data.z);
 
-        // Sprawdzanie, która z współrzędnych (x, y, z) jest dominująca
+    for (const auto& data : dataset) {
+        double x = data.x, y = data.y, z = data.z;
+        double abs_x = std::abs(x), abs_y = std::abs(y), abs_z = std::abs(z);
+        double max_abs = std::max({ abs_x, abs_y, abs_z });
+
+        dane projected = data;
+
         if (abs_x >= abs_y && abs_x >= abs_z) {
-            // Dominująca współrzędna X - projekcja na płaszczyznę YZ
-            if (data.x >= 0) {
-                yz_positive.push_back(data); // X >= 0
+            // X face
+            projected.y = y / max_abs;
+            projected.z = z / max_abs;
+            if (x > 0) {
+                projected.x = 1.0;
+                yz_positive.push_back(projected);
             }
             else {
-                yz_negative.push_back(data); // X < 0
+                projected.x = -1.0;
+                yz_negative.push_back(projected);
             }
         }
         else if (abs_y >= abs_x && abs_y >= abs_z) {
-            // Dominująca współrzędna Y - projekcja na płaszczyznę XZ
-            if (data.y >= 0) {
-                xz_positive.push_back(data); // Y >= 0
+            // Y face
+            projected.x = x / max_abs;
+            projected.z = z / max_abs;
+            if (y > 0) {
+                projected.y = 1.0;
+                xz_positive.push_back(projected);
             }
             else {
-                xz_negative.push_back(data); // Y < 0
+                projected.y = -1.0;
+                xz_negative.push_back(projected);
             }
         }
         else {
-            // Dominująca współrzędna Z - projekcja na płaszczyznę XY
-            if (data.z >= 0) {
-                xy_positive.push_back(data); // Z >= 0
+            // Z face
+            projected.x = x / max_abs;
+            projected.y = y / max_abs;
+            if (z > 0) {
+                projected.z = 1.0;
+                xy_positive.push_back(projected);
             }
             else {
-                xy_negative.push_back(data); // Z < 0
+                projected.z = -1.0;
+                xy_negative.push_back(projected);
             }
         }
     }
 }
 
+auto randomData() {
+	std::vector<dane> dataset;
+	for (int i = 0; i < 50000; ++i) {
+		dane temp;
+		temp.sun_id = i;
+		temp.x = static_cast<double>(rand() % 2000)-1000;
+		temp.y = static_cast<double>(rand() % 2000)-1000;
+		temp.z = static_cast<double>(rand() % 2000)-1000;
+		temp.intensity = static_cast<double>(rand() % 2000)-1000;
+		dataset.push_back(temp);
+	}
+	return dataset;
+}
 int main() {
     auto dataset = parseData();
+    //auto dataset = randomData();
         auto projectStart = std::chrono::high_resolution_clock::now();
     std::vector<dane> xy_positive, xy_negative, xz_positive, xz_negative, yz_positive, yz_negative;
     projectOntoPlanes(dataset, xy_positive, xy_negative, xz_positive, xz_negative, yz_positive, yz_negative);
