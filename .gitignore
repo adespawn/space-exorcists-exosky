@@ -1,7 +1,3 @@
-﻿################################################################################
-# Ten plik .gitignore został utworzony automatycznie przez Microsoft(R) Visual Studio.
-################################################################################
-
 /forntend/ImageGen/ImageGen/output.bmp
 /forntend/ImageGen/.vs/ImageGen
 /.vs
@@ -12,3 +8,12 @@
 /frontend/exoskyOpenGL/x64/Debug
 *.txt
 *.bmp
+backend/databuilder/*.raw
+backend/databuilder/main
+backend/databuilder/src/main
+backend/databuilder/.log/*
+backend/databuilder/layers/*
+backend/databuilder/layers/
+backend/databuilder/src/*.o
+backend/databuilder/src/phase3
+backend/downloader/node_modules/*
