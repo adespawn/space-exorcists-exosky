@@ -1,3 +1,13 @@
+/forntend/ImageGen/ImageGen/output.bmp
+/forntend/ImageGen/.vs/ImageGen
+/.vs
+/forntend/ImageGen/x64/Debug
+/forntend/ImageGen/ImageGen/x64/Debug
+/frontend/exoskyOpenGL/.vs/exoskyOpenGL
+/frontend/exoskyOpenGL/exoskyOpenGL/x64/Debug
+/frontend/exoskyOpenGL/x64/Debug
+*.txt
+*.bmp
 backend/databuilder/*.raw
 backend/databuilder/main
 backend/databuilder/src/main
