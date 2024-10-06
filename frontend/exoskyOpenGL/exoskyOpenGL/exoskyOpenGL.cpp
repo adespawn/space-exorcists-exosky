@@ -13,6 +13,7 @@
 #include <shader.h>
 #include <camera.h>
 #include "texture_loader.h"
+#include "buttonBoundingBoxes.h"
 #include <objectVertecies.h>
 
 #include <iostream>
@@ -47,6 +48,7 @@ FontRenderer* fontRenderer;
 
 const unsigned int segments = 64;
 const unsigned int rings = 32;
+bool drawGridLines = true;
 
 int main()
 {
@@ -84,7 +86,6 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     // build and compile shaders
-    //DODAC FONT SHADER
     Shader shader("cubemaps.vs", "cubemaps.fs");
     Shader skyboxShader("skybox.vs", "skybox.fs");
 
@@ -158,7 +159,12 @@ int main()
     //textury
     unsigned int floorTexture = loadTexture("textures\\planet.jpg");
     unsigned int billboardTexture = loadTexture("textures\\mis.png");
-    unsigned int hudTexture = loadTexture("textures\\hud.png");
+    //HUD
+    unsigned int hudTexture0 = loadTexture("textures\\hud.png");
+    unsigned int hudTexture1 = loadTexture("textures\\hud_download.png");
+    unsigned int hudTexture2 = loadTexture("textures\\hud_camera.png");
+    unsigned int hudTexture3 = loadTexture("textures\\hud_telescope.png");
+    unsigned int hudTexture4 = loadTexture("textures\\hud_rocket.png");
 
     //tymczasowe tlo / tlo wstepne
     std::vector<std::string> faces
@@ -171,6 +177,20 @@ int main()
         "textures\\back.bmp"
     };
     unsigned int cubemapTexture = loadCubemap(faces);
+
+    /*
+    //t³o siatki
+    faces = std::vector<std::string>
+    {
+        "textures\\meshR.png",
+        "textures\\meshL.png",
+        "textures\\meshU.png",
+        "textures\\meshD.png",
+        "textures\\meshF.png",
+        "textures\\meshB.png"
+    };
+    unsigned int gridTexture = loadCubemap(faces);
+    */
 
     // Initialize font rendering
     fontRenderer = new FontRenderer("NunitoSans_7pt-Light.ttf", SCR_WIDTH, SCR_HEIGHT);
@@ -189,6 +209,8 @@ int main()
 
     Shader hudShader("HUD.vs", "HUD.fs");
 
+    double xCursorPos = 0, yCursorPos = 0;
+    short int HUDscene = 0;
 
     //glowna petla programu
     while (!glfwWindowShouldClose(window))
@@ -200,6 +222,17 @@ int main()
 
         // input klawiatura/myszka
         processInput(window);
+
+        // sprawdzanie pozycji myszki
+        glfwGetCursorPos(window, &xCursorPos, &yCursorPos);
+
+        if (yCursorPos > MIN_Y && yCursorPos < MAX_Y) {
+            if (xCursorPos > boundingBoxes[0] && xCursorPos < boundingBoxes[1]) { HUDscene = 1; }
+            else if (xCursorPos > boundingBoxes[2] && xCursorPos < boundingBoxes[3]) { HUDscene = 2; }
+            else if (xCursorPos > boundingBoxes[4] && xCursorPos < boundingBoxes[5]) { HUDscene = 3; }
+            else if (xCursorPos > boundingBoxes[6] && xCursorPos < boundingBoxes[7]) { HUDscene = 4; }
+            else HUDscene = 0;
+        } else HUDscene = 0;
 
         //RENDER
         // Clear buffers
@@ -224,8 +257,25 @@ int main()
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
         glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        /*
+        //skybox grid lines
+        if (drawGridLines) {
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glDepthMask(GL_TRUE);
+
+            glBindVertexArray(skyboxVAO);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, gridTexture);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+
+            glDisable(GL_BLEND);
+        }
+
         glBindVertexArray(0);
-        glDepthFunc(GL_LESS);
+        glDepthFunc(GL_LESS);*/
+
         //koniec zmiany depth passu ***
 
         // 2. render obiektow nie przexroczystych ---------------
@@ -304,9 +354,26 @@ int main()
 
         hudShader.use();
         glBindVertexArray(hudVAO);
-        glBindTexture(GL_TEXTURE_2D, hudTexture);
+        //choose current HUD button
+        switch (HUDscene)
+        {
+            case 1:
+                glBindTexture(GL_TEXTURE_2D, hudTexture1);
+                break;
+            case 2:
+                glBindTexture(GL_TEXTURE_2D, hudTexture2);
+                break;
+            case 3:
+                glBindTexture(GL_TEXTURE_2D, hudTexture3);
+                break;
+            case 4:
+                glBindTexture(GL_TEXTURE_2D, hudTexture4);
+                break;
+        default:
+            glBindTexture(GL_TEXTURE_2D, hudTexture0);
+            break;
+        }
         glDrawArrays(GL_TRIANGLES, 0, 6);
-
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
 
@@ -350,7 +417,18 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 //guziki myszy
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-    //if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) 
+    //if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE)
+
+        /*
+    963
+        1069
+
+        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        double xCursorPos, yCursorPos;
+        glfwGetCursorPos(window, &xCursorPos, &yCursorPos);
+        std::cout << yCursorPos << "\n";
+        }
+    */
 }
 
 // glfw: ruch myszy

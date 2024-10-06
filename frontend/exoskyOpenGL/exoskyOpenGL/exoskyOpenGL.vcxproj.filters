@@ -53,6 +53,9 @@
     <ClInclude Include="objectVertecies.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="buttonBoundingBoxes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="cubemaps.fs" />

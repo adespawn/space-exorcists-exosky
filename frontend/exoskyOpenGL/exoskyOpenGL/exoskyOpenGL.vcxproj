@@ -142,6 +142,7 @@
     <ClCompile Include="texture_loader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="buttonBoundingBoxes.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="font.h" />
     <ClInclude Include="ft2build.h" />
