@@ -58,7 +58,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     //instancja okna
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "EXOSKY", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "EXOSKY", glfwGetPrimaryMonitor(), NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -87,7 +87,7 @@ int main()
     //DODAC FONT SHADER
     Shader shader("cubemaps.vs", "cubemaps.fs");
     Shader skyboxShader("skybox.vs", "skybox.fs");
-    
+
     //definicja obiektu wierzcholkow
     /*
     // floor VAO
@@ -124,6 +124,7 @@ int main()
     glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
     // sphere VAO
     unsigned int sphereVAO, sphereVBO;
     glGenVertexArrays(1, &sphereVAO);
@@ -136,6 +137,7 @@ int main()
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glBindVertexArray(0);
+
     //billboard VAO
     unsigned int billboardVAO, billboardVBO;
     glGenVertexArrays(1, &billboardVAO);
@@ -199,22 +201,42 @@ int main()
         // input klawiatura/myszka
         processInput(window);
 
-        // render
+        //RENDER
+        // Clear buffers
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        //projekcja
-        shader.use();
+        //view and projection matrices
         glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        shader.setMat4("view", view);
+
+        // 1. skybox, doslownie i w przenosni -------------------
+        //zmiana depth passu TYLKO DLA SKYBOX ***
+        glDepthFunc(GL_LEQUAL);
+        skyboxShader.use();
+        // usuwanie translacji (niebo statyczne)
+        view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
+        
+        skyboxShader.setMat4("view", view);
+        skyboxShader.setMat4("projection", projection);
+
+        // skybox cube
+        glBindVertexArray(skyboxVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+        glDepthFunc(GL_LESS);
+        //koniec zmiany depth passu ***
+
+        // 2. render obiektow nie przexroczystych ---------------
+        shader.use();
+        shader.setMat4("view", camera.GetViewMatrix());
         shader.setMat4("projection", projection);
 
-        //opaque objects render ------------
         glDisable(GL_BLEND);
         glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_TRUE);
 
-        // Render the sphere (planet)
         glm::mat4 sphereModel = glm::mat4(1.0f);
         shader.setMat4("model", sphereModel);
 
@@ -243,12 +265,12 @@ int main()
         fontRenderer->RenderText(textShader, "POMOCY", 25.0f, 25.0f, 8.0f, glm::vec3(1.0, 1.0, 1.0));
         */
 
-        //render transparent objects ----------------
+        // 3. render przexroczystych ----------------------------
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDepthMask(GL_FALSE);
+        glDepthMask(GL_TRUE);
 
-        // Render the billboard
+        //render billboardow
         glm::vec3 billboardPos = glm::vec3(0.0f, 52.5f, 0.0f);
         glm::mat4 billboardModel = glm::mat4(1.0f);
         billboardModel = glm::translate(billboardModel, billboardPos);
@@ -275,23 +297,7 @@ int main()
         glDisable(GL_BLEND);
         glDepthMask(GL_TRUE);
 
-        //skybox, doslownie i w przenosni
-        glDepthFunc(GL_LEQUAL);  //zmiana depth passu TYLKO DLA SKYBOX ***
-        skyboxShader.use();
-        // usuwanie translacji (niebo statyczne)
-        view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
-        skyboxShader.setMat4("view", view);
-        skyboxShader.setMat4("projection", projection);
-
-        // skybox cube
-        glBindVertexArray(skyboxVAO);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        glBindVertexArray(0);
-        glDepthFunc(GL_LESS); //koniec zmiany depth passu ***
-
-        //HUD
+        // 4. Render HUD ----------------------------------------
         glDisable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -304,7 +310,7 @@ int main()
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
 
-        //buffer swap (dwukrotne buferowanie Kajtek o tym gadal)
+        // Swap buffers and poll events
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
