@@ -102,6 +102,19 @@ int main()
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     */
+
+    //HUD VAO
+    unsigned int hudVAO, hudVBO;
+    glGenVertexArrays(1, &hudVAO);
+    glGenBuffers(1, &hudVBO);
+    glBindVertexArray(hudVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, hudVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(hudVertices), hudVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+
     // skybox VAO
     unsigned int skyboxVAO, skyboxVBO;
     glGenVertexArrays(1, &skyboxVAO);
@@ -143,6 +156,7 @@ int main()
     //textury
     unsigned int floorTexture = loadTexture("textures\\planet.jpg");
     unsigned int billboardTexture = loadTexture("textures\\mis.png");
+    unsigned int hudTexture = loadTexture("textures\\hud.png");
 
     //tymczasowe tlo / tlo wstepne
     std::vector<std::string> faces
@@ -170,6 +184,9 @@ int main()
 
     skyboxShader.use();
     skyboxShader.setInt("skybox", 0);
+
+    Shader hudShader("HUD.vs", "HUD.fs");
+
 
     //glowna petla programu
     while (!glfwWindowShouldClose(window))
@@ -273,6 +290,19 @@ int main()
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
         glDepthFunc(GL_LESS); //koniec zmiany depth passu ***
+
+        //HUD
+        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        hudShader.use();
+        glBindVertexArray(hudVAO);
+        glBindTexture(GL_TEXTURE_2D, hudTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
 
         //buffer swap (dwukrotne buferowanie Kajtek o tym gadal)
         glfwSwapBuffers(window);

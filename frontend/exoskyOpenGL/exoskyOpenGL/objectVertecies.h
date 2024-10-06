@@ -4224,3 +4224,13 @@ float billboardVertices[] = {
      3.0f, -3.0f, 0.0f,  1.0f, 0.0f, // bottom-right
     -3.0f, -3.0f, 0.0f,  0.0f, 0.0f  // bottom-left
 };
+float hudVertices[] = {
+    // positions        // texture coords
+     1.0f, -1.0f, 0.0f, 0.0f, 1.0f,
+     1.0f,  1.0f, 0.0f, 0.0f, 0.0f,
+    -1.0f,  1.0f, 0.0f, 1.0f, 0.0f,
+
+     1.0f, -1.0f, 0.0f, 0.0f, 1.0f,
+    -1.0f,  1.0f, 0.0f, 1.0f, 0.0f,
+    -1.0f, -1.0f, 0.0f, 1.0f, 1.0f
+};

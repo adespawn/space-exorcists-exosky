@@ -61,5 +61,7 @@
     <None Include="skybox.vs" />
     <None Include="text.vs" />
     <None Include="text.fs" />
+    <None Include="HUD.vs" />
+    <None Include="HUD.fs" />
   </ItemGroup>
 </Project>
