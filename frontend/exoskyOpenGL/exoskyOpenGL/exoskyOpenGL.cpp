@@ -1,3 +1,6 @@
+//http://www.opengl-tutorial.org/intermediate-tutorials/billboards-particles/billboards/
+//https://learnopengl.com/Getting-started/OpenGL
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <stb_image.h>
@@ -10,7 +13,7 @@
 #include <shader.h>
 #include <camera.h>
 #include "texture_loader.h"
-#include <shphereVertecies.h>
+#include <objectVertecies.h>
 
 #include <iostream>
 #include <string>
@@ -30,7 +33,7 @@ const unsigned int SCR_WIDTH = 1920;
 const unsigned int SCR_HEIGHT = 1080;
 
 // camera
-Camera camera(glm::vec3(0.0f, 52.0f, 0.0f));
+Camera camera(glm::vec3(0.0f, PLANET_RADIUS, 0.0f));
 float lastX = (float)SCR_WIDTH / 2.0;
 float lastY = (float)SCR_HEIGHT / 2.0;
 bool firstMouse = true, leftMouseButton = false;
@@ -82,10 +85,11 @@ int main()
 
     // build and compile shaders
     //DODAC FONT SHADER
-    Shader shader("6.1.cubemaps.vs", "6.1.cubemaps.fs");
-    Shader skyboxShader("6.1.skybox.vs", "6.1.skybox.fs");
+    Shader shader("cubemaps.vs", "cubemaps.fs");
+    Shader skyboxShader("skybox.vs", "skybox.fs");
     
     //definicja obiektu wierzcholkow
+    /*
     // floor VAO
     unsigned int floorVAO, floorVBO;
     glGenVertexArrays(1, &floorVAO);
@@ -97,6 +101,7 @@ int main()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    */
     // skybox VAO
     unsigned int skyboxVAO, skyboxVBO;
     glGenVertexArrays(1, &skyboxVAO);
@@ -118,23 +123,36 @@ int main()
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glBindVertexArray(0);
+    //billboard VAO
+    unsigned int billboardVAO, billboardVBO;
+    glGenVertexArrays(1, &billboardVAO);
+    glGenBuffers(1, &billboardVBO);
+    glBindVertexArray(billboardVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, billboardVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(billboardVertices), billboardVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glBindVertexArray(0);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     //wczytywanie tekstor poczatkowych, potem skybox zrobic dynamicznie:
-    //textura podlogi planety
+    //textury
     unsigned int floorTexture = loadTexture("textures\\planet.jpg");
+    unsigned int billboardTexture = loadTexture("textures\\mis.png");
 
     //tymczasowe tlo / tlo wstepne
     std::vector<std::string> faces
     {
-        "textures\\right.jpg",
-        "textures\\left.jpg",
+        "textures\\right.bmp",
+        "textures\\left.bmp",
         "textures\\top.bmp",
-        "textures\\bottom.jpg",
-        "textures\\front.jpg",
-        "textures\\back.jpg"
+        "textures\\bottom.bmp",
+        "textures\\front.bmp",
+        "textures\\back.bmp"
     };
     unsigned int cubemapTexture = loadCubemap(faces);
 
@@ -169,14 +187,28 @@ int main()
 
         //projekcja
         shader.use();
-        glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 view = camera.GetViewMatrix();
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f); // ostatnie zmienic jesli chcecie zwiekszyc dystans
-        shader.setMat4("model", model);
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         shader.setMat4("view", view);
         shader.setMat4("projection", projection);
 
-        //obiekty
+        //opaque objects render ------------
+        glDisable(GL_BLEND);
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+
+        // Render the sphere (planet)
+        glm::mat4 sphereModel = glm::mat4(1.0f);
+        shader.setMat4("model", sphereModel);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, floorTexture);
+        glBindVertexArray(sphereVAO);
+        for (int i = 0; i <= rings; ++i) {
+            glDrawArrays(GL_TRIANGLE_STRIP, i * (segments + 1) * 2, (segments + 1) * 2);
+        }
+        glBindVertexArray(0);
+
         //podloga
         /*
         glBindVertexArray(floorVAO);
@@ -185,16 +217,46 @@ int main()
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);*/
 
-        //sfera
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, floorTexture);
-        glBindVertexArray(sphereVAO);
-        for (int i = 0; i <= rings; ++i) {
-            glDrawArrays(GL_TRIANGLE_STRIP, i * (segments + 1) * 2, (segments + 1) * 2);
-        }
-        glBindVertexArray(0);
         //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        //render text
+        /*
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        fontRenderer->RenderText(textShader, "POMOCY", 25.0f, 25.0f, 8.0f, glm::vec3(1.0, 1.0, 1.0));
+        */
+
+        //render transparent objects ----------------
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDepthMask(GL_FALSE);
+
+        // Render the billboard
+        glm::vec3 billboardPos = glm::vec3(0.0f, 52.5f, 0.0f);
+        glm::mat4 billboardModel = glm::mat4(1.0f);
+        billboardModel = glm::translate(billboardModel, billboardPos);
+
+        glm::vec3 cameraPos = camera.Position;
+        glm::vec3 lookAt = glm::normalize(cameraPos - billboardPos);
+        glm::vec3 right = glm::normalize(glm::cross(glm::vec3(0.0f, -1.0f, 0.0f), lookAt));
+        glm::vec3 up = glm::normalize(glm::cross(lookAt, right));
+
+        billboardModel[0] = glm::vec4(right, 0.0f);
+        billboardModel[1] = glm::vec4(up, 0.0f);
+        billboardModel[2] = glm::vec4(lookAt, 0.0f);
+
+        shader.setMat4("model", billboardModel);
+        shader.setMat4("view", camera.GetViewMatrix());
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, billboardTexture);
+        glBindVertexArray(billboardVAO);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        glBindVertexArray(0);
+
+        //reset transparency
+        glDisable(GL_BLEND);
+        glDepthMask(GL_TRUE);
 
         //skybox, doslownie i w przenosni
         glDepthFunc(GL_LEQUAL);  //zmiana depth passu TYLKO DLA SKYBOX ***
@@ -212,22 +274,15 @@ int main()
         glBindVertexArray(0);
         glDepthFunc(GL_LESS); //koniec zmiany depth passu ***
 
-        //render text
-        /*
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        fontRenderer->RenderText(textShader, "POMOCY", 25.0f, 25.0f, 8.0f, glm::vec3(1.0, 1.0, 1.0));
-        */
-
         //buffer swap (dwukrotne buferowanie Kajtek o tym gadal)
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
     //dealokacja pewnie o czyms zapomne
-    glDeleteVertexArrays(1, &floorVAO);
+    //glDeleteVertexArrays(1, &floorVAO);
     glDeleteVertexArrays(1, &skyboxVAO);
-    glDeleteBuffers(1, &floorVBO);
+    //glDeleteBuffers(1, &floorVBO);
     glDeleteBuffers(1, &skyboxVBO);
     delete fontRenderer;
 
@@ -254,8 +309,6 @@ void processInput(GLFWwindow *window)
 // glfw: zmiana wielkosci okna
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-    // make sure the viewport matches the new window dimensions; note that width and 
-    // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
 }
 

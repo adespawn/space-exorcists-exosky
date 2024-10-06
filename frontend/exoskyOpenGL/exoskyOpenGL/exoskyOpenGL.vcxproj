@@ -146,15 +146,15 @@
     <ClInclude Include="font.h" />
     <ClInclude Include="ft2build.h" />
     <ClInclude Include="shader.h" />
-    <ClInclude Include="shphereVertecies.h" />
+    <ClInclude Include="objectVertecies.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="texture_loader.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="6.1.cubemaps.fs" />
-    <None Include="6.1.cubemaps.vs" />
-    <None Include="6.1.skybox.fs" />
-    <None Include="6.1.skybox.vs" />
+    <None Include="cubemaps.fs" />
+    <None Include="cubemaps.vs" />
+    <None Include="skybox.fs" />
+    <None Include="skybox.vs" />
     <None Include="text.fs" />
     <None Include="text.vs" />
   </ItemGroup>
