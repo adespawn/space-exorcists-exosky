@@ -178,19 +178,17 @@ int main()
     };
     unsigned int cubemapTexture = loadCubemap(faces);
 
-    /*
     //t³o siatki
     faces = std::vector<std::string>
     {
-        "textures\\meshR.png",
-        "textures\\meshL.png",
-        "textures\\meshU.png",
-        "textures\\meshD.png",
-        "textures\\meshF.png",
-        "textures\\meshB.png"
+        "textures\\gridRight.png",
+        "textures\\gridLeft.png",
+        "textures\\gridTop.png",
+        "textures\\gridBottom.png",
+        "textures\\gridBack.png",
+        "textures\\gridFront.png"
     };
     unsigned int gridTexture = loadCubemap(faces);
-    */
 
     // Initialize font rendering
     fontRenderer = new FontRenderer("NunitoSans_7pt-Light.ttf", SCR_WIDTH, SCR_HEIGHT);
@@ -258,23 +256,21 @@ int main()
         glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
-        /*
         //skybox grid lines
         if (drawGridLines) {
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            glDepthMask(GL_TRUE);
+            glDepthMask(GL_FALSE);
 
-            glBindVertexArray(skyboxVAO);
-            glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_CUBE_MAP, gridTexture);
             glDrawArrays(GL_TRIANGLES, 0, 36);
 
+            glDepthMask(GL_TRUE);
             glDisable(GL_BLEND);
         }
 
         glBindVertexArray(0);
-        glDepthFunc(GL_LESS);*/
+        glDepthFunc(GL_LESS);
 
         //koniec zmiany depth passu ***
 
@@ -420,9 +416,6 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     //if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE)
 
         /*
-    963
-        1069
-
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         double xCursorPos, yCursorPos;
         glfwGetCursorPos(window, &xCursorPos, &yCursorPos);
